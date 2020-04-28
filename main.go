@@ -12,7 +12,7 @@ func main() {
 	models.InitDB("tradeservice:password@/tradeservice?charset=utf8&parseTime=True&loc=Local", false)
 	defer models.DB.Close()
 
-	clients.InitRedis()
+	clients.InitRedis("trade")
 
 	gin.SetMode("debug")
 	r := gin.Default()
