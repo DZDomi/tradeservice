@@ -77,6 +77,8 @@ func Execute(c *gin.Context) {
 	}
 
 	// TODO: Connect to other services that do transactions
+	now := time.Now()
+	offer.Executed = &now
 
 	models.DB.Create(offer)
 	if offer.ID == 0 {
