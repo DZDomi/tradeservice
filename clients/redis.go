@@ -31,7 +31,10 @@ func SetObject(prefix string, key string, object interface{}, duration time.Dura
 		log.Println("Error while marshaling: " + keyToSet + ", " + err.Error())
 		return err
 	}
-	client.Set(keyToSet, result, duration)
+	if _, err = client.Set(keyToSet, result, duration).Result(); err != nil {
+		log.Println("Error while trying to set redis key: " + keyToSet + ", " + err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -47,6 +50,15 @@ func GetObject(prefix string, key string, object interface{}) error {
 	}
 	if err = json.Unmarshal([]byte(val), object); err != nil {
 		log.Println("Error while unmarshalling: " + err.Error())
+		return err
+	}
+	return nil
+}
+
+func DeleteObject(prefix string, key string) error {
+	keyToDelete := generateKey(prefix, key)
+	if _, err := client.Del(keyToDelete).Result(); err != nil {
+		log.Println("Error while trying to delete redis key: " + keyToDelete + ", " + err.Error())
 		return err
 	}
 	return nil

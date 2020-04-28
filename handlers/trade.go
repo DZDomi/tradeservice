@@ -65,6 +65,8 @@ func CreateOffer(c *gin.Context) {
 func Execute(c *gin.Context) {
 	pid := c.Param("id")
 
+	// TODO: Wrap this all in a redis lock
+
 	offer := &models.Trade{}
 	if err := clients.GetObject("offer", pid, offer); err == redis.Nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No offer found for this id"})
@@ -79,6 +81,11 @@ func Execute(c *gin.Context) {
 	models.DB.Create(offer)
 	if offer.ID == 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create trade"})
+		return
+	}
+
+	if err := clients.DeleteObject("offer", pid); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
