@@ -53,12 +53,12 @@ func CreateOffer(c *gin.Context) {
 		User:      request.User,
 	}
 
-	if err = clients.SetObject("offer", pid.String(), offer, time.Minute); err != nil {
+	if err = clients.SetObject("offer", pid.String(), offer, time.Second*5); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"offer": offer})
+	c.JSON(http.StatusCreated, offer)
 }
 
 func Execute(c *gin.Context) {
@@ -71,8 +71,6 @@ func Execute(c *gin.Context) {
 	}
 	// TODO: Figure this out
 	defer clients.ReleaseLock(lock)
-
-	time.Sleep(time.Second * 5)
 
 	offer := &models.Trade{}
 	if err := clients.GetObject("offer", pid, offer); err == redis.Nil {
@@ -98,5 +96,5 @@ func Execute(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"offer": offer})
+	c.JSON(http.StatusOK, offer)
 }
