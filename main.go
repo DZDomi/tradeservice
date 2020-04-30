@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"tradeservice/clients"
 	"tradeservice/models"
+	"tradeservice/prices"
 )
 
 func main() {
@@ -14,6 +15,8 @@ func main() {
 
 	clients.InitRedis("trade")
 	clients.InitLock()
+
+	go prices.Subscribe()
 
 	gin.SetMode("debug")
 	r := gin.Default()

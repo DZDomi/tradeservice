@@ -98,3 +98,16 @@ func Execute(c *gin.Context) {
 
 	c.JSON(http.StatusOK, offer)
 }
+
+func ListTrades(c *gin.Context) {
+	userId := c.Query("user_id")
+
+	trades := new([]models.Trade)
+	if userId != "" {
+		models.DB.Where("user_id = ?", userId).Find(&trades)
+	} else {
+		models.DB.Find(&trades)
+	}
+
+	c.JSON(http.StatusOK, trades)
+}

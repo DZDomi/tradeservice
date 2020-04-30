@@ -9,10 +9,14 @@ func routes(r *gin.Engine) {
 
 	root := r.Group("/v1")
 	{
-		offer := root.Group("/offer")
+		offers := root.Group("/offers")
 		{
-			offer.POST("", handlers.CreateOffer)
-			offer.GET("/:id/execute", handlers.Execute)
+			offers.POST("", handlers.CreateOffer)
+			offers.GET("/:id/execute", handlers.Execute)
+		}
+		trades := root.Group("/trades")
+		{
+			trades.GET("", handlers.ListTrades)
 		}
 	}
 }
