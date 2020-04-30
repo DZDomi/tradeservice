@@ -28,7 +28,6 @@ func CreateOffer(c *gin.Context) {
 		Name: request.To,
 	}).First(to)
 
-	// TODO: find a better way to check for found asset
 	if from.Name == "" || to.Name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Assets do not exist"})
 		return
@@ -65,7 +64,15 @@ func CreateOffer(c *gin.Context) {
 func Execute(c *gin.Context) {
 	pid := c.Param("id")
 
-	// TODO: Wrap this all in a redis lock
+	// TODO: Think about how this can work with long execution times
+	lock, err := clients.GetLock(pid, time.Minute)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	// TODO: Figure this out
+	defer clients.ReleaseLock(lock)
+
+	time.Sleep(time.Second * 5)
 
 	offer := &models.Trade{}
 	if err := clients.GetObject("offer", pid, offer); err == redis.Nil {

@@ -13,6 +13,7 @@ func main() {
 	defer models.DB.Close()
 
 	clients.InitRedis("trade")
+	clients.InitLock()
 
 	gin.SetMode("debug")
 	r := gin.Default()
