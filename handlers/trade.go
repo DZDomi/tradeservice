@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/DZDomi/tradeservice/clients"
+	"github.com/DZDomi/tradeservice/models"
+	"github.com/DZDomi/tradeservice/requests"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v7"
 	"github.com/google/uuid"
 	"net/http"
 	"time"
-	"tradeservice/clients"
-	"tradeservice/models"
-	"tradeservice/requests"
 )
 
 func CreateOffer(c *gin.Context) {
@@ -33,7 +33,21 @@ func CreateOffer(c *gin.Context) {
 		return
 	}
 
-	// Check amount and wallet to user
+	walletResponse, err := clients.GetWallet(request.Wallet)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if walletResponse.User != request.User {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet"})
+		return
+	}
+
+	if walletResponse.Balance < request.Amount {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance"})
+		return
+	}
 
 	pid, err := uuid.NewRandom()
 	if err != nil {
@@ -51,9 +65,10 @@ func CreateOffer(c *gin.Context) {
 		From:      from.Name,
 		To:        to.Name,
 		User:      request.User,
+		Wallet:    request.Wallet,
 	}
 
-	if err = clients.SetObject("offer", pid.String(), offer, time.Second*5); err != nil {
+	if err = clients.SetObject("offer", pid.String(), offer, time.Minute); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -68,8 +83,8 @@ func Execute(c *gin.Context) {
 	lock, err := clients.GetLock(pid, time.Minute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-	// TODO: Figure this out
 	defer clients.ReleaseLock(lock)
 
 	offer := &models.Trade{}
@@ -80,6 +95,19 @@ func Execute(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	fmt.Println("Sending offer:", offer.PID, "to kafka...")
+	if err = clients.TradeCreated(offer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := clients.GetWallet(offer.Wallet)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Wallet from offer was not found anymore, what?"})
+		return
+	}
+	fmt.Println(response)
 
 	// TODO: Connect to other services that do transactions
 	now := time.Now()

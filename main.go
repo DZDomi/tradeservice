@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/DZDomi/tradeservice/clients"
+	"github.com/DZDomi/tradeservice/models"
 	"github.com/gin-gonic/gin"
-	"tradeservice/clients"
-	"tradeservice/models"
-	"tradeservice/prices"
 )
 
 func main() {
@@ -16,13 +15,14 @@ func main() {
 	clients.InitRedis("trade")
 	clients.InitLock()
 
-	go prices.Subscribe()
+	clients.InitKafka()
+
+	//go prices.Subscribe()
 
 	gin.SetMode("debug")
 	r := gin.Default()
 
 	routes(r)
-	//println(models.DB.Error)
 
 	_ = r.Run(fmt.Sprintf(":%d", 8080))
 }

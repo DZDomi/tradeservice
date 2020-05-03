@@ -12,6 +12,7 @@ type Trade struct {
 	UpdatedAt *time.Time `json:"-"`
 	DeletedAt *time.Time `sql:"index" json:"-"`
 	User      uint       `gorm:"column:user_id" json:"user_id"`
+	Wallet    uint       `gorm:"column:wallet_id" json:"wallet_id"`
 	From      string     `gorm:"column:from" json:"from"`
 	To        string     `gorm:"column:to" json:"to"`
 	Executed  *time.Time `gorm:"column:executed" json:"executed"`

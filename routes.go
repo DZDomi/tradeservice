@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/DZDomi/tradeservice/handlers"
 	"github.com/gin-gonic/gin"
-	"tradeservice/handlers"
 )
 
 func routes(r *gin.Engine) {

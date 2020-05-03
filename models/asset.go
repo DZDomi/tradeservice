@@ -7,7 +7,7 @@ type Asset struct {
 	CreatedAt time.Time `gorm:"not null"`
 	UpdatedAt *time.Time
 	DeletedAt *time.Time `sql:"index" json:"-"`
-	Bid       uint64     `gorm:"not null"`
-	Ask       uint64     `gorm:"not null"`
-	Precision uint64     `gorm:"not null"`
+	Bid       uint       `gorm:"not null"`
+	Ask       uint       `gorm:"not null"`
+	Precision uint       `gorm:"not null"`
 }
