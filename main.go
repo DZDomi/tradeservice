@@ -17,8 +17,6 @@ func main() {
 
 	clients.InitKafka()
 
-	//go prices.Subscribe()
-
 	gin.SetMode("debug")
 	r := gin.Default()
 

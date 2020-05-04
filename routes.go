@@ -12,7 +12,7 @@ func routes(r *gin.Engine) {
 		offers := root.Group("/offers")
 		{
 			offers.POST("", handlers.CreateOffer)
-			offers.GET("/:id/execute", handlers.Execute)
+			offers.GET("/:id/accept", handlers.Accept)
 		}
 		trades := root.Group("/trades")
 		{

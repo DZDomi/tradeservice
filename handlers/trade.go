@@ -33,18 +33,23 @@ func CreateOffer(c *gin.Context) {
 		return
 	}
 
-	walletResponse, err := clients.GetWallet(request.Wallet)
+	fromWalletResponse, err := clients.GetWallet(request.FromWallet)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	toWalletResponse, err := clients.GetWallet(request.ToWallet)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if walletResponse.User != request.User {
+	if fromWalletResponse.User != request.User || toWalletResponse.User != request.User {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet"})
 		return
 	}
 
-	if walletResponse.Balance < request.Amount {
+	if fromWalletResponse.Balance < request.Amount {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient balance"})
 		return
 	}
@@ -60,12 +65,13 @@ func CreateOffer(c *gin.Context) {
 	// TODO Calculation logic
 
 	offer := &models.Trade{
-		PID:       pid,
-		CreatedAt: time.Now(),
-		From:      from.Name,
-		To:        to.Name,
-		User:      request.User,
-		Wallet:    request.Wallet,
+		PID:        pid,
+		CreatedAt:  time.Now(),
+		From:       from.Name,
+		To:         to.Name,
+		User:       request.User,
+		FromWallet: request.FromWallet,
+		ToWallet:   request.ToWallet,
 	}
 
 	if err = clients.SetObject("offer", pid.String(), offer, time.Minute); err != nil {
@@ -76,7 +82,7 @@ func CreateOffer(c *gin.Context) {
 	c.JSON(http.StatusCreated, offer)
 }
 
-func Execute(c *gin.Context) {
+func Accept(c *gin.Context) {
 	pid := c.Param("id")
 
 	// TODO: Think about how this can work with long execution times
@@ -96,22 +102,8 @@ func Execute(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("Sending offer:", offer.PID, "to kafka...")
-	if err = clients.TradeCreated(offer); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	response, err := clients.GetWallet(offer.Wallet)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Wallet from offer was not found anymore, what?"})
-		return
-	}
-	fmt.Println(response)
-
-	// TODO: Connect to other services that do transactions
 	now := time.Now()
-	offer.Executed = &now
+	offer.Accepted = &now
 
 	models.DB.Create(offer)
 	if offer.ID == 0 {
@@ -120,6 +112,12 @@ func Execute(c *gin.Context) {
 	}
 
 	if err := clients.DeleteObject("offer", pid); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	fmt.Println("Sending offer:", offer.PID, "to kafka...")
+	if err = clients.TradeCreated(offer); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
